@@ -1,0 +1,5 @@
+{
+  "name": "3D Product Visualizer",
+  "description": "An application that uses AI to generate high-quality, photorealistic 3D product renderings from a 2D image, with customizable scene options.",
+  "requestFramePermissions": []
+}
