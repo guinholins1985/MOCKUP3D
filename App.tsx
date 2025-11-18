@@ -31,6 +31,14 @@ const App: React.FC = () => {
   }, []);
   
   const handleImageUpload = (file: File) => {
+    const acceptedTypes = ['image/png', 'image/jpeg', 'image/webp'];
+    if (!acceptedTypes.includes(file.type)) {
+      setError('Invalid file type. Please upload a PNG, JPG, or WEBP image.');
+      setUploadedImage(null);
+      setImageBase64(null);
+      return;
+    }
+
     setUploadedImage(file);
     setGeneratedImage(null);
     setError(null);
@@ -39,6 +47,13 @@ const App: React.FC = () => {
       setImageBase64(reader.result as string);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleOptionsChange = (newOptions: React.SetStateAction<RenderOptions>) => {
+    setRenderOptions(newOptions);
+    if (error) {
+      setError(null);
+    }
   };
 
   const handleGenerateClick = useCallback(async () => {
@@ -60,8 +75,16 @@ const App: React.FC = () => {
       const result = await generate3DRender(renderOptions, base64Data, uploadedImage.type);
       setGeneratedImage(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
       console.error(err);
+      if (err instanceof Error) {
+        if (err.message.includes('Failed to fetch') || err.message.includes('network error')) {
+           setError('A network error occurred. Please check your connection and try again.');
+        } else {
+           setError(err.message);
+        }
+      } else {
+        setError('An unknown error occurred.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -86,7 +109,7 @@ const App: React.FC = () => {
         <div className="lg:col-span-4 xl:col-span-3 bg-gray-800/50 rounded-2xl p-6 shadow-2xl border border-gray-700/50">
           <ControlPanel
             options={renderOptions}
-            setOptions={setRenderOptions}
+            setOptions={handleOptionsChange}
             onImageUpload={handleImageUpload}
             onGenerate={handleGenerateClick}
             isLoading={isLoading}

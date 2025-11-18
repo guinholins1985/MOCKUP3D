@@ -39,6 +39,15 @@ const Select = (props: React.SelectHTMLAttributes<HTMLSelectElement>) => (
   />
 );
 
+const CATEGORY_OPTIONS = ['Cosmetics', 'Electronics', 'Food & Beverage', 'Apparel', 'Luxury Goods'];
+const LIGHTING_OPTIONS = ['Studio Softbox', 'Natural Sunlight', 'Dramatic Rim Lighting', 'Cinematic', 'Neutral & Clean'];
+const RESOLUTION_OPTIONS = [
+  { value: '1024x1024', label: '1024x1024 (Square)' },
+  { value: '2048x2048', label: '2048x2048 (HD Square)' },
+  { value: '1024x1792', label: '1024x1792 (Portrait)' },
+  { value: '1792x1024', label: '1792x1024 (Landscape)' },
+];
+
 export const ControlPanel: React.FC<ControlPanelProps> = ({
   options,
   setOptions,
@@ -91,11 +100,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           <div>
             <Label htmlFor="category">Product Category</Label>
             <Select id="category" value={options.category} onChange={e => handleOptionChange('category', e.target.value)}>
-              <option>Cosmetics</option>
-              <option>Electronics</option>
-              <option>Food & Beverage</option>
-              <option>Apparel</option>
-              <option>Luxury Goods</option>
+              {CATEGORY_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
             </Select>
           </div>
           <div>
@@ -123,11 +128,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
            <div>
             <Label htmlFor="lighting">Lighting Style</Label>
             <Select id="lighting" value={options.lighting} onChange={e => handleOptionChange('lighting', e.target.value)}>
-              <option>Studio Softbox</option>
-              <option>Natural Sunlight</option>
-              <option>Dramatic Rim Lighting</option>
-              <option>Cinematic</option>
-              <option>Neutral & Clean</option>
+              {LIGHTING_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
             </Select>
           </div>
           <div>
@@ -140,10 +141,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           <div>
             <Label htmlFor="resolution">Output Resolution</Label>
             <Select id="resolution" value={options.resolution} onChange={e => handleOptionChange('resolution', e.target.value)}>
-              <option>1024x1024</option>
-              <option>2048x2048</option>
-              <option>1024x1792</option>
-              <option>1792x1024</option>
+              {RESOLUTION_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </Select>
           </div>
            <div>
