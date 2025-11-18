@@ -1,52 +1,52 @@
-
-import { GoogleGenAI, Modality } from "@google/genai";
+import { GoogleGenAI, Modality, Type } from "@google/genai";
 import type { RenderOptions } from '../types';
+import { CATEGORY_OPTIONS } from '../types';
 
 const buildPrompt = (options: RenderOptions): string => {
   const { category, angle, mockupStyle, lighting, reflections, resolution, watermarkText } = options;
 
   const reflectionText = reflections
-    ? 'Include realistic, high-fidelity reflections on the product surface.'
-    : 'The product should have a matte finish, with no direct or specular reflections.';
+    ? 'Inclua reflexos realistas e de alta fidelidade na superfície do produto.'
+    : 'O produto deve ter um acabamento fosco, sem reflexos diretos ou especulares.';
 
   const watermarkPromptSection = watermarkText
-    ? `Add a subtle, professional text watermark in the bottom-right corner with the text: "${watermarkText}".`
-    : "Do not add any watermark.";
+    ? `Adicione uma marca d'água de texto sutil e profissional no canto inferior direito com o texto: "${watermarkText}".`
+    : "Não adicione nenhuma marca d'água.";
 
   return `
-You are an art director and 3D rendering specialist, focused on creating photorealistic product visualizations for marketing and e-commerce. Your attention to detail is impeccable, and your goal is to produce an image indistinguishable from a professional photograph.
+Você é um diretor de arte e especialista em renderização 3D, focado em criar visualizações de produtos fotorrealistas para marketing e e-commerce. Sua atenção aos detalhes é impecável, e seu objetivo é produzir uma imagem indistinguível de uma fotografia profissional.
 
-# Main Task
-Generate a SINGLE high-quality, photorealistic 3D product image from the provided 2D product image.
+# Tarefa Principal
+Gerar uma ÚNICA imagem de produto 3D, fotorrealista e de alta qualidade, a partir da imagem 2D do produto fornecida.
 
-# Product Context
-- Category: ${category}
-- 2D Reference Image: [Attached]
+# Contexto do Produto
+- Categoria: ${category}
+- Imagem de Referência 2D: [Anexada]
 
-# Step-by-Step Process
-Follow these steps rigorously:
+# Processo Passo a Passo
+Siga estas etapas rigorosamente:
 
-1.  **3D Analysis and Modeling:**
-    - Analyze the attached 2D image to fully understand the product's geometry, proportions, materials, textures, and branding.
-    - Create a digitally accurate 3D model. Fidelity to the original product is the most important criterion.
+1.  **Análise e Modelagem 3D:**
+    - Analise a imagem 2D anexada para entender completamente a geometria, proporções, materiais, texturas e marca do produto.
+    - Crie um modelo 3D digitalmente preciso. A fidelidade ao produto original é o critério mais importante.
 
-2.  **Scene Composition:**
-    - **Positioning:** Render the 3D model at the specified viewing angle.
-    - **Rotation Angle (Y-Axis):** ${angle} degrees.
-    - **Scenario:** Place the 3D model in the following environment: "${mockupStyle}". The scenario should complement the product, never overshadow it. The primary focus is the product.
+2.  **Composição da Cena:**
+    - **Posicionamento:** Renderize o modelo 3D no ângulo de visão especificado.
+    - **Ângulo de Rotação (Eixo Y):** ${angle} graus.
+    - **Cenário:** Posicione o modelo 3D no seguinte ambiente: "${mockupStyle}". O cenário deve complementar o produto, nunca ofuscá-lo. O foco principal é o produto.
 
-3.  **Lighting and Rendering:**
-    - **Lighting Style:** Apply a professional "${lighting}" lighting scheme. The lighting should realistically highlight the product's contours and textures.
-    - **Surface Effects:** ${reflectionText} Reflections should be subtle and physically accurate, corresponding to the lighting and environment.
+3.  **Iluminação e Renderização:**
+    - **Estilo de Iluminação:** Aplique um esquema de iluminação profissional de "${lighting}". A iluminação deve realçar os contornos e texturas do produto de forma realista.
+    - **Efeitos de Superfície:** ${reflectionText} Os reflexos devem ser sutis e fisicamente corretos, correspondendo à iluminação e ao ambiente.
 
-4.  **Finalization and Details:**
-    - **Output Quality:** The final image must be rendered in the highest quality, with sharp details and no digital artifacts, suitable for a ${resolution} resolution.
+4.  **Finalização e Detalhes:**
+    - **Qualidade de Saída:** A imagem final deve ser renderizada com a mais alta qualidade, com detalhes nítidos e sem artefatos digitais, adequada para uma resolução de ${resolution}.
     - ${watermarkPromptSection}
 
-# Critical Rules and Restrictions
-- **IMAGE ONLY:** The only allowed output is the final image. DO NOT include text, captions, explanations, code, or anything else in your response. The response must be only the image content.
-- **NO DISTORTION:** Do not alter the original product's design, colors, or branding.
-- **PHOTOREALISM:** The final result must look like a real photograph, not an obvious computer rendering.
+# Regras e Restrições Críticas
+- **SOMENTE IMAGEM:** O único resultado permitido é a imagem final. NÃO inclua texto, legendas, explicações, código, ou qualquer outra coisa na sua resposta. A resposta deve ser apenas o conteúdo da imagem.
+- **SEM DISTORÇÃO:** Não altere o design, as cores ou a marca do produto original.
+- **FOTORREALISMO:** O resultado final deve parecer uma fotografia real, não uma renderização de computador óbvia.
   `;
 };
 
@@ -80,11 +80,11 @@ export const generate3DRender = async (
     const candidate = response.candidates?.[0];
     
     if (!candidate) {
-      throw new Error('API response was empty or invalid. No candidates found.');
+      throw new Error('A resposta da API estava vazia ou inválida. Nenhum candidato encontrado.');
     }
     
     if (candidate.finishReason && ['SAFETY', 'RECITATION', 'OTHER'].includes(candidate.finishReason)) {
-      throw new Error(`Image generation failed. The prompt may have been blocked for safety or other reasons (Reason: ${candidate.finishReason}).`);
+      throw new Error(`A geração da imagem falhou. O prompt pode ter sido bloqueado por segurança ou outros motivos (Motivo: ${candidate.finishReason}).`);
     }
 
     const imagePart = candidate.content?.parts?.find(part => 'inlineData' in part);
@@ -97,15 +97,68 @@ export const generate3DRender = async (
     
     const textResponse = response.text?.trim();
     if (textResponse) {
-      throw new Error(`API returned text instead of an image: "${textResponse}"`);
+      throw new Error(`A API retornou texto em vez de uma imagem: "${textResponse}"`);
     }
     
-    throw new Error('No image data found in the API response. The model may have failed to generate an image.');
+    throw new Error('Nenhum dado de imagem encontrado na resposta da API. O modelo pode ter falhado ao gerar uma imagem.');
   } catch (error) {
-    console.error("Error calling Gemini API:", error);
+    console.error("Erro ao chamar a API Gemini:", error);
     if (error instanceof Error) {
         throw error;
     }
-    throw new Error("An unknown error occurred while generating the 3D render.");
+    throw new Error("Ocorreu um erro desconhecido ao gerar a renderização 3D.");
   }
 };
+
+export const analyzeProductImage = async (
+  imageBase64: string,
+  mimeType: string
+): Promise<{ category: string; mockupStyle: string; }> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+
+  const prompt = `
+You are a creative director specializing in product photography. Your task is to analyze a product image and suggest the best scene composition for a photorealistic 3D render.
+
+Analyze the provided image.
+
+Respond ONLY with a valid JSON object. Do not include any other text or markdown formatting.
+
+Your JSON response must contain:
+1. "category": A string. Classify the product into one of the following exact categories: ${JSON.stringify(CATEGORY_OPTIONS)}. Choose the most fitting category.
+2. "mockupStyle": A string. Describe a creative, suitable, and complementary background scenario for the product, in Portuguese. Be descriptive and concise (e.g., "Sobre uma mesa de madeira rústica com grãos de café espalhados", "Flutuando em um ambiente minimalista de gravidade zero com neons suaves", "Em uma superfície de ardósia escura e úmida com gotas de água").
+`;
+  
+  const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: {
+        parts: [
+          { inlineData: { data: imageBase64, mimeType: mimeType } },
+          { text: prompt },
+        ],
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            category: { type: Type.STRING },
+            mockupStyle: { type: Type.STRING },
+          },
+          required: ['category', 'mockupStyle'],
+        },
+      },
+    }
+  );
+
+  const jsonText = response.text.trim();
+  const result = JSON.parse(jsonText);
+
+  // Validate that the returned category is one of the allowed options
+  if (!CATEGORY_OPTIONS.includes(result.category)) {
+      // If not, default to the first option to avoid breaking the UI
+      console.warn(`Model returned an invalid category: '${result.category}'. Defaulting to '${CATEGORY_OPTIONS[0]}'.`);
+      result.category = CATEGORY_OPTIONS[0];
+  }
+
+  return result;
+}

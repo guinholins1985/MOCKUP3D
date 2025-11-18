@@ -1,39 +1,41 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { ControlPanel } from './components/ControlPanel';
 import { ImagePreview } from './components/ImagePreview';
 import { Header } from './components/Header';
-import { generate3DRender } from './services/geminiService';
+import { generate3DRender, analyzeProductImage } from './services/geminiService';
 import type { RenderOptions } from './types';
 
+const defaultRenderOptions: RenderOptions = {
+  category: 'Cosméticos',
+  angle: 45,
+  mockupStyle: 'Em uma superfície minimalista de mármore',
+  lighting: 'Softbox de Estúdio',
+  reflections: true,
+  resolution: '1024x1024',
+  watermarkText: '',
+};
+
 const App: React.FC = () => {
-  const [renderOptions, setRenderOptions] = useState<RenderOptions>({
-    category: 'Cosmetics',
-    angle: 45,
-    mockupStyle: 'On a minimalist marble surface',
-    lighting: 'Studio Softbox',
-    reflections: true,
-    resolution: '1024x1024',
-    watermarkText: '',
-  });
+  const [renderOptions, setRenderOptions] = useState<RenderOptions>(defaultRenderOptions);
 
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!process.env.API_KEY) {
-      setApiKeyError("API Key is missing. Please set the API_KEY environment variable.");
+      setApiKeyError("Chave de API não encontrada. Por favor, defina a variável de ambiente API_KEY.");
     }
   }, []);
   
   const handleImageUpload = (file: File) => {
     const acceptedTypes = ['image/png', 'image/jpeg', 'image/webp'];
     if (!acceptedTypes.includes(file.type)) {
-      setError('Invalid file type. Please upload a PNG, JPG, or WEBP image.');
+      setError('Tipo de arquivo inválido. Por favor, envie uma imagem PNG, JPG ou WEBP.');
       setUploadedImage(null);
       setImageBase64(null);
       return;
@@ -41,10 +43,29 @@ const App: React.FC = () => {
 
     setUploadedImage(file);
     setGeneratedImage(null);
+    setRenderOptions(defaultRenderOptions);
     setError(null);
+
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setImageBase64(reader.result as string);
+    reader.onloadend = async () => {
+      const base64Data = reader.result as string;
+      setImageBase64(base64Data);
+
+      // Analyze image to get category and mockup style
+      setIsAnalyzing(true);
+      try {
+        const result = await analyzeProductImage(base64Data.split(',')[1], file.type);
+        setRenderOptions(prev => ({
+          ...prev,
+          category: result.category,
+          mockupStyle: result.mockupStyle,
+        }));
+      } catch (err) {
+        console.error("Image analysis failed:", err);
+        // Do not set an error for the user, they can still proceed manually
+      } finally {
+        setIsAnalyzing(false);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -58,7 +79,7 @@ const App: React.FC = () => {
 
   const handleGenerateClick = useCallback(async () => {
     if (!uploadedImage || !imageBase64) {
-      setError('Please upload a product image first.');
+      setError('Por favor, envie uma imagem do produto primeiro.');
       return;
     }
      if (apiKeyError) {
@@ -68,8 +89,7 @@ const App: React.FC = () => {
 
     setIsLoading(true);
     setError(null);
-    setGeneratedImage(null);
-
+    
     try {
       const base64Data = imageBase64.split(',')[1];
       const result = await generate3DRender(renderOptions, base64Data, uploadedImage.type);
@@ -78,12 +98,12 @@ const App: React.FC = () => {
       console.error(err);
       if (err instanceof Error) {
         if (err.message.includes('Failed to fetch') || err.message.includes('network error')) {
-           setError('A network error occurred. Please check your connection and try again.');
+           setError('Ocorreu um erro de rede. Por favor, verifique sua conexão e tente novamente.');
         } else {
            setError(err.message);
         }
       } else {
-        setError('An unknown error occurred.');
+        setError('Ocorreu um erro desconhecido.');
       }
     } finally {
       setIsLoading(false);
@@ -94,9 +114,9 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-900 text-red-400 flex items-center justify-center p-4">
         <div className="text-center bg-gray-800 p-8 rounded-lg shadow-2xl border border-red-700/50">
-          <h1 className="text-2xl font-bold mb-4">Configuration Error</h1>
+          <h1 className="text-2xl font-bold mb-4">Erro de Configuração</h1>
           <p>{apiKeyError}</p>
-          <p className="text-sm text-gray-400 mt-4">This application requires a Gemini API key to function.</p>
+          <p className="text-sm text-gray-400 mt-4">Esta aplicação requer uma chave da API Gemini para funcionar.</p>
         </div>
       </div>
     );
@@ -113,6 +133,7 @@ const App: React.FC = () => {
             onImageUpload={handleImageUpload}
             onGenerate={handleGenerateClick}
             isLoading={isLoading}
+            isAnalyzing={isAnalyzing}
             uploadedFileName={uploadedImage?.name}
           />
         </div>
@@ -126,7 +147,7 @@ const App: React.FC = () => {
         </div>
       </main>
       <footer className="text-center p-4 text-gray-500 text-sm">
-        <p>Powered by Gemini API. Built for demonstration purposes.</p>
+        <p>Desenvolvido com a API Gemini. Criado para fins de demonstração.</p>
       </footer>
     </div>
   );

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { PenTool } from './icons/PenTool';
 
@@ -9,10 +8,10 @@ export const Header: React.FC = () => {
         <PenTool className="w-8 h-8" />
       </div>
       <h1 className="text-4xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-cyan-300 sm:text-5xl">
-        AI 3D Product Visualizer
+        Visualizador de Produtos 3D com IA
       </h1>
       <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-400">
-        Transform your 2D product images into photorealistic 3D renders. Customize the scene, lighting, and details to create stunning visuals for your marketing needs.
+        Transforme suas imagens de produtos 2D em renderizações 3D fotorrealistas. Personalize a cena, iluminação e detalhes para criar visuais impressionantes para seu marketing.
       </p>
     </header>
   );
